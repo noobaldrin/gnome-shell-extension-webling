@@ -1,0 +1,12 @@
+{
+  "uuid": "webling@noobaldrin.github.com",
+  "name": "Webling",
+  "description": "A small easy-access utility type web browser for a single monitor setup.\n",
+  "shell-version": [ "49" ],
+  "url": "https://github.com/noobaldrin/gnome-shell-extension-webling",
+  "version": 0.1,
+  "settings-schema": "org.gnome.shell.extensions.webling",
+  "donations": {
+    "paypal": "adtadas19"
+  }
+}

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+<schema id="org.gnome.shell.extensions.webling"
+        path="/org/gnome/shell/extensions/webling/">
+
+  <key name="win-pos-x" type="i">
+    <default>0</default>
+    <summary>Window X position</summary>
+  </key>
+
+  <key name="win-pos-y" type="i">
+    <default>0</default>
+    <summary>Window Y position</summary>
+  </key>
+
+  <key name="win-size-height" type="i">
+    <default>720</default>
+    <summary>Height of window</summary>
+  </key>
+
+  <key name="win-size-width" type="i">
+    <default>1280</default>
+    <summary>Width of window</summary>
+  </key>
+
+</schema>
+</schemalist>
