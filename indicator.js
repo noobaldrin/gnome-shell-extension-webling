@@ -6,11 +6,11 @@ import Clutter from 'gi://Clutter';
 
 import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {DBusClient, dbuscall, BUS_NAME} from "./dbus.js";
 import {WindowManager} from "./windowmanager.js";
-import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 const APP_PATH = `${GLib.get_home_dir()}/.local/bin/webling`;
 
@@ -29,6 +29,18 @@ export const Indicator = GObject.registerClass(
 
             this.connect('button-press-event', this._onButtonPressed.bind(this));
 
+            this._alwaysOnTop = new PopupMenu.PopupSwitchMenuItem(_("Always On Top"));
+            this._alwaysOnTop.connect('toggled', (item, state) => {
+                this._settings.toggles.set_boolean("always-on-top", state);
+
+                if (!this._wm._win)
+                    return;
+
+                if (state)
+                    this._wm._win.make_above();
+                else this._wm._win.unmake_above();
+            })
+
             this._prefsItem = new PopupMenu.PopupMenuItem(_('Preferences'));
             this._prefsItem.connect('activate', () => {
                 // Preferences will come later
@@ -39,6 +51,7 @@ export const Indicator = GObject.registerClass(
                 dbuscall('Close');
             });
 
+            this.menu.addMenuItem(this._alwaysOnTop);
             this.menu.addMenuItem(this._prefsItem);
             this.menu.addMenuItem(this._closeItem);
         }

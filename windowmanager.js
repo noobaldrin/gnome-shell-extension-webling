@@ -1,4 +1,3 @@
-import Meta from 'gi://Meta';
 import GLib from 'gi://GLib';
 
 const WEBLING_CLASS = "com.github.noobaldrin.webling";
@@ -28,8 +27,8 @@ export class WindowManager {
 
                         this._resizeTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
                             const rect = window.get_frame_rect();
-                            this._settings.set_int("win-size-height", rect.height);
-                            this._settings.set_int("win-size-width", rect.width);
+                            this._settings.sizepos.set_int("win-size-height", rect.height);
+                            this._settings.sizepos.set_int("win-size-width", rect.width);
 
                             this._resizeTimeout = 0;
                         });
@@ -68,8 +67,8 @@ export class WindowManager {
                                 relX = Math.max(0, Math.min(relX, monRect.width - rect.width));
                                 relY = Math.max(0, Math.min(relY, monRect.height - rect.height));
 
-                                this._settings.set_int("win-pos-x", relX);
-                                this._settings.set_int("win-pos-y", relY);
+                                this._settings.sizepos.set_int("win-pos-x", relX);
+                                this._settings.sizepos.set_int("win-pos-y", relY);
                             }
 
                             this._positionChangedTimeout = 0;
@@ -85,10 +84,14 @@ export class WindowManager {
                         const primaryRect = display.get_monitor_geometry(primaryIndex);
 
                         // Read stored monitor-relative coordinates
-                        const relX = this._settings.get_int("win-pos-x");
-                        const relY = this._settings.get_int("win-pos-y");
-                        const width = this._settings.get_int("win-size-width");
-                        const height = this._settings.get_int("win-size-height");
+                        const relX = this._settings.sizepos.get_int("win-pos-x");
+                        const relY = this._settings.sizepos.get_int("win-pos-y");
+                        const width = this._settings.sizepos.get_int("win-size-width");
+                        const height = this._settings.sizepos.get_int("win-size-height");
+
+                        if (this._settings.toggles.get_boolean("always-on-top"))
+                            this._win.make_above();
+                        else this._win.unmake_above();
 
                         this._win.move_resize_frame(
                             false,
@@ -97,8 +100,6 @@ export class WindowManager {
                             width,
                             height
                         );
-
-                        this._win.make_above();
                     });
 
                     this._windowUnmanagedId = this._win.connect("unmanaged", () => {

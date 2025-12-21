@@ -24,7 +24,10 @@ import {Indicator} from "./indicator.js";
 export default class WeblingExtension extends Extension {
     constructor(metadata) {
         super(metadata);
-        this._settings = this.getSettings();
+        this._settings = {
+            sizepos: this.getSettings('org.gnome.shell.extensions.webling.sizes_and_positions'),
+            toggles: this.getSettings('org.gnome.shell.extensions.webling.toggles')
+        };
     }
 
     enable() {
