@@ -10,6 +10,7 @@ export class WindowManager {
         this._windowCreatedId = 0;
         this._windowResizedId = 0;
         this._windowPositionChangedId = 0;
+        this._windowMappedId = 0;
         this._windowUnmanagedId = 0;
         this._setupListener();
     }
@@ -75,7 +76,7 @@ export class WindowManager {
                         });
                     });
 
-                    this._wmMappedId = this._win.connect("notify::mapped", () => {
+                    this._windowMappedId = this._win.connect("notify::mapped", () => {
                         if (!this.isWindowOnPrimary())
                             this.moveWindowToPrimaryMonitor();
 
