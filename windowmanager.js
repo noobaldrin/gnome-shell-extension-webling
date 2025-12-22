@@ -105,6 +105,7 @@ export class WindowManager {
 
                     this._windowUnmanagedId = this._win.connect("unmanaged", () => {
                         this.disconnectSignals();
+                        this._win = null;
                     });
 
                     return GLib.SOURCE_REMOVE;
@@ -210,13 +211,15 @@ export class WindowManager {
     destroy() {
         this.disconnectSignals();
 
-        if (this._windowUnmanagedId) {
-            this._win.disconnect(this._windowUnmanagedId);
-            this._windowUnmanagedId = 0;
-        }
+        if (this._win) {
+            if (this._windowUnmanagedId) {
+                this._win.disconnect(this._windowUnmanagedId);
+                this._windowUnmanagedId = 0;
+            }
 
-        this._win.disconnect(this._windowCreatedId);
-        this._windowCreatedId = 0;
-        this._win = null;
+            this._win.disconnect(this._windowCreatedId);
+            this._windowCreatedId = 0;
+            this._win = null;
+        }
     }
 }
