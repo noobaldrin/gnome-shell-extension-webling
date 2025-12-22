@@ -29,10 +29,9 @@ export const Indicator = GObject.registerClass(
 
             this.connect('button-press-event', this._onButtonPressed.bind(this));
 
-            this._alwaysOnTop = new PopupMenu.PopupSwitchMenuItem(_("Always On Top"));
-            this._alwaysOnTop.connect('toggled', (item, state) => {
+            this._alwaysOnTopItem = new PopupMenu.PopupSwitchMenuItem(_("Always On Top"));
+            this._alwaysOnTopId = this._alwaysOnTopItem.connect('toggled', (item, state) => {
                 this._settings.toggles.set_boolean("always-on-top", state);
-
                 if (!this._wm._win)
                     return;
 
@@ -41,17 +40,25 @@ export const Indicator = GObject.registerClass(
                 else this._wm._win.unmake_above();
             })
 
+            this._settings.toggles.connect("changed::always-on-top", (settings_, key) => {
+                // Todo: Seems like an undefined behavior when menu is hidden
+                // Object Gjs_ui_popupMenu_PopupMenuItem (0x56537dbca500), has been already disposed — impossible
+                // to access it. This might be caused by the object having been destroyed from C code using something
+                // such as destroy(), dispose(), or remove() vfuncs.
+                this._alwaysOnTopItem.setToggleState(settings_.get_boolean(key));
+            });
+
             this._prefsItem = new PopupMenu.PopupMenuItem(_('Preferences'));
-            this._prefsItem.connect('activate', () => {
+            this._prefsItemId = this._prefsItem.connect('activate', () => {
                 // Preferences will come later
             });
 
             this._closeItem = new PopupMenu.PopupMenuItem(_('Close'));
-            this._closeItem.connect('activate', () => {
+            this._closeItemId = this._closeItem.connect('activate', () => {
                 dbuscall('Close');
             });
 
-            this.menu.addMenuItem(this._alwaysOnTop);
+            this.menu.addMenuItem(this._alwaysOnTopItem);
             this.menu.addMenuItem(this._prefsItem);
             this.menu.addMenuItem(this._closeItem);
         }
@@ -157,6 +164,9 @@ export const Indicator = GObject.registerClass(
         }
 
         destroy() {
+            this._closeItem.disconnect(this._closeItemId);
+            this._prefsItem.disconnect(this._prefsItemId);
+            this._alwaysOnTopItem.disconnect(this._alwaysOnTopId);
             this._wm.destroy();
             super.destroy();
         }

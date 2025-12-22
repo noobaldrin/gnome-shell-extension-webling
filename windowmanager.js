@@ -12,6 +12,7 @@ export class WindowManager {
         this._windowPositionChangedId = 0;
         this._windowMappedId = 0;
         this._windowUnmanagedId = 0;
+        this._windowAlwaysOnTopId = 0;
         this._setupListener();
     }
 
@@ -102,6 +103,13 @@ export class WindowManager {
                             height
                         );
                     });
+
+                    this._windowAlwaysOnTopId = this._win.connect("notify::above", () => {
+                        if (!this._win)
+                            return;
+
+                        this._settings.toggles.set_boolean("always-on-top", this._win.above);
+                    })
 
                     this._windowUnmanagedId = this._win.connect("unmanaged", () => {
                         this.disconnectSignals();
@@ -200,6 +208,11 @@ export class WindowManager {
         if (this._windowResizedId) {
             this._win.disconnect(this._windowResizedId);
             this._windowResizedId = 0;
+        }
+
+        if (this._windowAlwaysOnTopId) {
+            this._win.disconnect(this._windowAlwaysOnTopId);
+            this._windowAlwaysOnTopId = 0;
         }
 
         if (this._windowPositionChangedId) {
