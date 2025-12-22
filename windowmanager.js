@@ -181,12 +181,12 @@ export class WindowManager {
 
     debugCheck() {
         if (!this._win) {
-            log("_win is null");
+            console.debug("_win is null");
             return;
         }
 
         // This will be printed in /var/log/messages
-        log("DEBUG")
+        console.debug("DEBUG")
     }
 
 }

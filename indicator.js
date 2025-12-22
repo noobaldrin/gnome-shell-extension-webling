@@ -59,7 +59,7 @@ export const Indicator = GObject.registerClass(
         _onButtonPressed(actor, event) {
             DBusClient.checkNameHasOwner(BUS_NAME, (err, result) => {
                 if (err || !Array.isArray(result)) {
-                    logError(err ?? new Error('webling: Invalid DBus response'));
+                    console.debug(err ?? new Error('webling: Invalid DBus response'));
                     return;
                 }
 
