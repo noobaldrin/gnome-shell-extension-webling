@@ -104,10 +104,7 @@ export class WindowManager {
                     });
 
                     this._windowUnmanagedId = this._win.connect("unmanaged", () => {
-                        this._win.disconnect(this._windowResizedId);
-                        this._win.disconnect(this._windowPositionChangedId);
-                        this._win.disconnect(this._wmMappedId);
-                        this._win = null;
+                        this.disconnectSignals();
                     });
 
                     return GLib.SOURCE_REMOVE;
@@ -190,4 +187,36 @@ export class WindowManager {
         console.debug("DEBUG")
     }
 
+    disconnectSignals() {
+        if(!this._win)
+            return;
+
+        if (this._windowMappedId) {
+            this._win.disconnect(this._windowMappedId);
+            this._windowMappedId = 0;
+        }
+
+        if (this._windowResizedId) {
+            this._win.disconnect(this._windowResizedId);
+            this._windowResizedId = 0;
+        }
+
+        if (this._windowPositionChangedId) {
+            this._win.disconnect(this._windowPositionChangedId);
+            this._windowPositionChangedId = 0;
+        }
+    }
+
+    destroy() {
+        this.disconnectSignals();
+
+        if (this._windowUnmanagedId) {
+            this._win.disconnect(this._windowUnmanagedId);
+            this._windowUnmanagedId = 0;
+        }
+
+        this._win.disconnect(this._windowCreatedId);
+        this._windowCreatedId = 0;
+        this._win = null;
+    }
 }

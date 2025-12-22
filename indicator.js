@@ -110,10 +110,6 @@ export const Indicator = GObject.registerClass(
             return Clutter.EVENT_STOP;
         }
 
-        destroy() {
-            super.destroy();
-        }
-
         launchApp() {
             if (!GLib.find_program_in_path(APP_PATH)) {
                 this.showBinaryMissingDialog(APP_PATH);
@@ -158,6 +154,11 @@ export const Indicator = GObject.registerClass(
             ]);
 
             dialog.open();
+        }
+
+        destroy() {
+            this._wm.destroy();
+            super.destroy();
         }
 
     });
