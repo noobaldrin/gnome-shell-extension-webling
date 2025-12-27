@@ -27,7 +27,7 @@ export const Indicator = GObject.registerClass(
 
             this._wm = new WindowManager(settings);
 
-            this.connect('button-press-event', this._onButtonPressed.bind(this));
+            this._buttonPressedId = this.connect('button-press-event', this._onButtonPressed.bind(this));
 
             this._alwaysOnTopItem = new PopupMenu.PopupSwitchMenuItem(_("Always On Top"));
             this._alwaysOnTopId = this._alwaysOnTopItem.connect('toggled', (item, state) => {
@@ -40,7 +40,7 @@ export const Indicator = GObject.registerClass(
                 else this._wm._win.unmake_above();
             })
 
-            this._settings.toggles.connect("changed::always-on-top", (settings_, key) => {
+            this._alwaysOnTopSignalId = this._settings.toggles.connect("changed::always-on-top", (settings_, key) => {
                 // Todo: Seems like an undefined behavior when menu is hidden
                 // Object Gjs_ui_popupMenu_PopupMenuItem (0x56537dbca500), has been already disposed — impossible
                 // to access it. This might be caused by the object having been destroyed from C code using something
@@ -85,13 +85,15 @@ export const Indicator = GObject.registerClass(
 
                         if (!this._wm.isInCurrentWorkspace()) {
                             this._wm.moveWindowToCurrentWorkspace();
-                            GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                            this._winShowId = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
                                 dbuscall('Show');
+                                return GLib.SOURCE_REMOVE;
                             });
                             return;
                         } else if (this._wm.isInCurrentWorkspace()) {
-                            GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                            this._winToggleId = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
                                 dbuscall('Toggle');
+                                return GLib.SOURCE_REMOVE;
                             });
                             return;
                         }
@@ -105,9 +107,10 @@ export const Indicator = GObject.registerClass(
                         // Middle click used for debugging
                         this.menu.close();
 
-                        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                        this._winDebugId = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
                             dbuscall('Debug');
                             this._wm.debugCheck();
+                            return GLib.SOURCE_REMOVE;
                         });
 
                         break;
@@ -129,6 +132,7 @@ export const Indicator = GObject.registerClass(
 
         showBinaryMissingDialog(binaryName) {
             const dialog = new ModalDialog.ModalDialog({ styleClass: 'system-dialog' });
+            this._missingBinaryDialog = dialog;
 
             const content = new St.BoxLayout({
                 vertical: true,
@@ -142,10 +146,11 @@ export const Indicator = GObject.registerClass(
             content.add_child(messageLabel);
 
             const linkButton = new St.Button({ style_class: 'modal-dialog-link', x_expand: true });
+            this._linkButton = linkButton;
             const linkLabel = new St.Label({ text: 'Install from GitHub' });
             linkButton.set_child(linkLabel);
 
-            linkButton.connect('clicked', () => {
+            this._linkButtonId = linkButton.connect('clicked', () => {
                 Gio.AppInfo.launch_default_for_uri('https://github.com/noobaldrin/webling', null);
             });
 
@@ -164,9 +169,37 @@ export const Indicator = GObject.registerClass(
         }
 
         destroy() {
-            this._closeItem.disconnect(this._closeItemId);
+            if (this._linkButton && this._linkButtonId) {
+                this._linkButton.disconnect(this._linkButtonId);
+                this._linkButtonId = null;
+            }
+
+            if (this._missingBinaryDialog) {
+                this._missingBinaryDialog.destroy();
+                this._missingBinaryDialog = null;
+            }
+
+            if (this._winShowId) {
+                GLib.Source.remove(this._winShowId);
+                this._winShowId = null;
+            }
+
+            if (this._winToggleId) {
+                GLib.Source.remove(this._winToggleId);
+                this._winToggleId = null;
+            }
+
+            if (this._winDebugId) {
+                GLib.Source.remove(this._winDebugId);
+                this._winDebugId = null;
+            }
+
+            this._closeItem?.disconnect(this._closeItemId);
             this._prefsItem.disconnect(this._prefsItemId);
             this._alwaysOnTopItem.disconnect(this._alwaysOnTopId);
+            this._settings.toggles.disconnect(this._alwaysOnTopSignalId);
+            this.disconnect(this._buttonPressedId);
+
             this._wm.destroy();
             super.destroy();
         }

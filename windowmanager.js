@@ -8,6 +8,7 @@ export class WindowManager {
         this._metaWindow = global.display;
         this._win = null;
         this._windowCreatedId = 0;
+        this._findWindowId = 0;
         this._windowResizedId = 0;
         this._windowPositionChangedId = 0;
         this._windowMappedId = 0;
@@ -18,14 +19,14 @@ export class WindowManager {
 
     _setupListener() {
         this._windowCreatedId = this._metaWindow.connect('window-created', (display, window) => {
-            GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            this._findWindowId = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
                 if (window.get_wm_class() === WEBLING_CLASS) {
                     this._win = window;
 
                     this._resizeTimeout = 0;
                     this._windowResizedId = this._win.connect("size-changed", (window) => {
                         if (this._resizeTimeout)
-                            GLib.source_remove(this._resizeTimeout);
+                            GLib.Source.remove(this._resizeTimeout);
 
                         this._resizeTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
                             const rect = window.get_frame_rect();
@@ -33,13 +34,15 @@ export class WindowManager {
                             this._settings.sizepos.set_int("win-size-width", rect.width);
 
                             this._resizeTimeout = 0;
+
+                            return GLib.SOURCE_REMOVE;
                         });
                     });
 
                     this._positionChangedTimeout = 0;
                     this._windowPositionChangedId = this._win.connect("position-changed", (window) => {
                         if (this._positionChangedTimeout)
-                            GLib.source_remove(this._positionChangedTimeout);
+                            GLib.Source.remove(this._positionChangedTimeout);
 
                         this._positionChangedTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 300, () => {
                             const rect = window.get_frame_rect();
@@ -54,8 +57,7 @@ export class WindowManager {
                             for (let i = 0; i < display.get_n_monitors(); i++) {
                                 const m = display.get_monitor_geometry(i);
                                 if (x >= m.x && x < m.x + m.width &&
-                                    y >= m.y && y < m.y + m.height)
-                                {
+                                    y >= m.y && y < m.y + m.height) {
                                     currentMonitor = i;
                                     break;
                                 }
@@ -74,6 +76,7 @@ export class WindowManager {
                             }
 
                             this._positionChangedTimeout = 0;
+                            return GLib.SOURCE_REMOVE;
                         });
                     });
 
@@ -115,9 +118,9 @@ export class WindowManager {
                         this.disconnectSignals();
                         this._win = null;
                     });
-
-                    return GLib.SOURCE_REMOVE;
                 }
+
+                return GLib.SOURCE_REMOVE;
             });
         });
     }
@@ -159,8 +162,7 @@ export class WindowManager {
         for (let i = 0; i < display.get_n_monitors(); i++) {
             const m = display.get_monitor_geometry(i);
             if (x >= m.x && x < m.x + m.width &&
-                y >= m.y && y < m.y + m.height)
-            {
+                y >= m.y && y < m.y + m.height) {
                 foundMonitor = i;
                 break;
             }
@@ -197,42 +199,53 @@ export class WindowManager {
     }
 
     disconnectSignals() {
-        if(!this._win)
+        if (!this._win)
             return;
 
         if (this._windowMappedId) {
             this._win.disconnect(this._windowMappedId);
-            this._windowMappedId = 0;
+            this._windowMappedId = null;
         }
 
         if (this._windowResizedId) {
+            if (this._resizeTimeout) {
+                GLib.Source.remove(this._resizeTimeout);
+                this._resizeTimeout = null;
+            }
+
             this._win.disconnect(this._windowResizedId);
-            this._windowResizedId = 0;
+            this._windowResizedId = null;
         }
 
         if (this._windowAlwaysOnTopId) {
             this._win.disconnect(this._windowAlwaysOnTopId);
-            this._windowAlwaysOnTopId = 0;
+            this._windowAlwaysOnTopId = null;
         }
 
         if (this._windowPositionChangedId) {
+            if (this._positionChangedTimeout) {
+                GLib.Source.remove(this._positionChangedTimeout);
+                this._positionChangedTimeout = null;
+            }
+
             this._win.disconnect(this._windowPositionChangedId);
-            this._windowPositionChangedId = 0;
+            this._windowPositionChangedId = null;
         }
     }
 
     destroy() {
         this.disconnectSignals();
 
-        if (this._win) {
-            if (this._windowUnmanagedId) {
-                this._win.disconnect(this._windowUnmanagedId);
-                this._windowUnmanagedId = 0;
-            }
-
-            this._win.disconnect(this._windowCreatedId);
-            this._windowCreatedId = 0;
-            this._win = null;
+        if (this._findWindowId) {
+            GLib.Source.remove(this._findWindowId);
+            this._findWindowId = null;
         }
+
+        if (this._windowCreatedId) {
+            this._metaWindow.disconnect(this._windowCreatedId);
+            this._windowCreatedId = null;
+        }
+
+        this._win = null;
     }
 }
