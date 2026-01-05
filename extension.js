@@ -29,10 +29,7 @@ export default class WeblingExtension extends Extension {
     enable() {
         console.info("Webling is starting...");
 
-        this._settings = {
-            sizepos: this.getSettings('org.gnome.shell.extensions.webling.sizes_and_positions'),
-            toggles: this.getSettings('org.gnome.shell.extensions.webling.toggles')
-        };
+        this._settings = this.getSettings('org.gnome.shell.extensions.webling');
 
         this._indicator = new Indicator(this._settings);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
@@ -44,8 +41,6 @@ export default class WeblingExtension extends Extension {
         this._indicator?.destroy();
         this._indicator = null;
 
-        this._settings.sizepos = null;
-        this._settings.toggles = null;
         this._settings = null;
     }
 }
