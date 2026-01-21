@@ -201,6 +201,23 @@ export const Indicator = GObject.registerClass(
             missingBinaryDialog.open();
         }
 
+        _removeMainLoopSource() {
+            if (this._winShowId) {
+                GLib.Source.remove(this._winShowId);
+                this._winShowId = null;
+            }
+
+            if (this._winToggleId) {
+                GLib.Source.remove(this._winToggleId);
+                this._winToggleId = null;
+            }
+
+            if (this._winDebugId) {
+                GLib.Source.remove(this._winDebugId);
+                this._winDebugId = null;
+            }
+        }
+
         _cleanupBinaryMissingDialog() {
             if (!this._missingBinaryDialog)
                 return;
@@ -231,6 +248,7 @@ export const Indicator = GObject.registerClass(
         }
 
         destroy() {
+            this._removeMainLoopSource();
             this._cleanupBinaryMissingDialog();
 
             if (this._closeItemId) {
@@ -256,21 +274,6 @@ export const Indicator = GObject.registerClass(
             if (this._buttonPressedId) {
                 this.disconnect(this._buttonPressedId);
                 this._buttonPressedId = null;
-            }
-
-            if (this._winShowId) {
-                GLib.Source.remove(this._winShowId);
-                this._winShowId = null;
-            }
-
-            if (this._winToggleId) {
-                GLib.Source.remove(this._winToggleId);
-                this._winToggleId = null;
-            }
-
-            if (this._winDebugId) {
-                GLib.Source.remove(this._winDebugId);
-                this._winDebugId = null;
             }
 
             if (this._alwaysOnTopSettingsId) {

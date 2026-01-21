@@ -227,6 +227,8 @@ export class WindowManager {
     }
 
     destroy() {
+        this._removeMainLoopSources();
+
         this._display?.disconnectObject(this);
         this._display = null;
 
@@ -234,7 +236,5 @@ export class WindowManager {
         this._win = null;
 
         this._settings = null;
-
-        this._removeMainLoopSources();
     }
 }
